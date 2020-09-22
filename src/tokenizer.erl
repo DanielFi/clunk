@@ -2,34 +2,7 @@
 
 -export([tokenize/1]).
 
--record(token, {type, value}). 
-
--define(SINGLE_CHARACTER_OPERATORS, [
-    "!",
-    "$",
-    "%",
-    "^",
-    "&",
-    "*",
-    "(",
-    ")",
-    "+",
-    "-",
-    "/",
-    "=",
-    "<",
-    ">",
-    "[",
-    "]"
-    ]).
-
--define(TWO_CHARACTER_OPERATORS, [
-    "->",
-    "==",
-    ">=",
-    "<=",
-    "!="
-    ]).
+-include("tokenizer.hrl").
 
 %%====================================================================
 %% API functions
@@ -37,36 +10,38 @@
 
 %% Tokenize a list
 tokenize(Source) when is_list(Source) -> 
-    tokenize_loop("\n" ++ Source, []). 
+    tokenize_loop("\n" ++ Source, [], 0). 
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
-tokenize_loop([], Tokens) -> 
+tokenize_loop([], Tokens, _) -> 
     lists:reverse([#token{type = eof, value = none} | Tokens]);
-tokenize_loop([_|_] = Source, Tokens) -> 
-    case tokenize_any(Source) of
-        {Token, Rest} -> 
-            tokenize_loop(Rest, [Token | Tokens]); 
+tokenize_loop([_|_] = Source, Tokens, IndentLevel) -> 
+    case tokenize_any(Source, IndentLevel) of
+        {Indents, Rest, NewIndentLevel} when is_list(Indents) -> 
+            tokenize_loop(Rest, Indents ++ Tokens, NewIndentLevel); 
+        {#token{} = Token, Rest} -> 
+            tokenize_loop(Rest, [Token | Tokens], IndentLevel); 
         {Rest} when is_list(Rest) ->
-            tokenize_loop(Rest, Tokens);
+            tokenize_loop(Rest, Tokens, IndentLevel);
         error ->
             io:format("Error at \"~s\"", [Source]),
             error
     end.
     
-tokenize_any([D | _] = Source) when D >= $0 , $9 >= D ->
+tokenize_any([D | _] = Source, _) when D >= $0 , $9 >= D ->
     tokenize_integer(Source);
-tokenize_any([L | _] = Source) when L >= $a , $z >= L ->
+tokenize_any([L | _] = Source, _) when L >= $a , $z >= L ->
     tokenize_word(Source);
-tokenize_any("\n" ++ Rest) ->
-    tokenize_indent(Rest);
-tokenize_any([32 | Rest]) ->
+tokenize_any("\n" ++ Rest, IndentLevel) ->
+    tokenize_indent(Rest, IndentLevel);
+tokenize_any([32 | Rest], _) ->
     {Rest};
-tokenize_any([9| Rest]) ->
+tokenize_any([9| Rest], _) ->
     {Rest};
-tokenize_any(Source) ->
+tokenize_any(Source, _) ->
     tokenize_operator(Source).
 
 tokenize_integer(Source) ->
@@ -77,26 +52,38 @@ tokenize_word(Source) ->
     {Chars, Rest} = consume_chars(Source, fun is_alphanumeric/1),
     {#token{type = word, value = Chars}, Rest}.
 
-tokenize_indent(" " ++ _ = Source) -> 
+tokenize_indent(" " ++ _ = Source, IndentLevel) -> 
     {Spaces, Rest} = consume_chars(Source, " "),
+    NewIndentLevel = floor(length(Spaces) / 4),
     [H | _] = Rest, 
-    case H of
-        10 ->
+    case {H, NewIndentLevel} of
+        {10, _} ->
+            {Rest};
+        {_, IndentLevel} ->
             {Rest};
         _ ->
-            {#token{type = indent, value = length(Spaces) / 4}, Rest}
+            Value = if NewIndentLevel - IndentLevel > 0 -> in; true -> out end,
+            Count = abs(NewIndentLevel - IndentLevel),
+            {lists:duplicate(Count, #token{type = indent, value = Value}), Rest, NewIndentLevel}
     end;
-tokenize_indent("\t" ++ _ = Source) ->
+tokenize_indent("\t" ++ _ = Source, IndentLevel) ->
     {Tabs, Rest} = consume_chars(Source, "\t"),
+    NewIndentLevel = length(Tabs),
     [H | _] = Rest, 
-    case H of
-        10 ->
+    case {H, NewIndentLevel} of
+        {10, _} ->
+            {Rest};
+        {_, IndentLevel} ->
             {Rest};
         _ ->
-            {#token{type = indent, value = length(Tabs)}, Rest}
+            Value = if NewIndentLevel - IndentLevel > 0 -> in; true -> out end,
+            Count = abs(NewIndentLevel - IndentLevel),
+            {lists:duplicate(Count, #token{type = indent, value = Value}), Rest, NewIndentLevel}
     end;
-tokenize_indent(Source) ->
-    {#token{type = indent, value = 0}, Source}.
+tokenize_indent(Source, 0) ->
+    {Source};
+tokenize_indent(Source, IndentLevel) ->
+    {lists:duplicate(IndentLevel, #token{type = indent, value = out}), Source, 0}.
 
 tokenize_operator(Source) ->
     case tokenize_two_char_operator(Source) of
