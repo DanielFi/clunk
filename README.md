@@ -10,9 +10,11 @@ Road map
 - [x] lex
 - [x] parse
 - [ ] interpret
-  - [ ] basic expressions
+  - [X] basic expressions
+  - [X] bound names
   - [ ] functions, scopes and closures
-  - [ ] pattern matching
+  - [X] pattern matching
+  - [ ] complex data types (tuples and lists)
 
 Build
 -----
