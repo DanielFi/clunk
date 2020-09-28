@@ -1,20 +1,19 @@
-Everything is an expression
-Functions are first class (and they have closures)
-Atoms are a thing (erlang style)
-Lists are a thing (erlang style)
-Tuples are a thing (erlang style)
-Records are a thing (erlang style)
-Pattern matching is a thing
+* Everything is an expression
+* Functions are first class (and they have closures)
+* Atoms are a thing (erlang style)
+* Tuples are a thing
+* Pattern matching is a thing
+* You can match anything, even functions themselves!
 
-It's basically erlang without the OTP fun but slower
+It's basically drunk erlang (without the OTP fun) and JS inspired syntax. 
 
 
-Example:
+### Example:
 
 ```
-do_stuff(X) ->
+DoStuff = (X) => {
 	X + 2
+};
 
-print(do_stuff(1))
+print(DoStuff(1))
 ```
-
