@@ -24,4 +24,4 @@ Build
 Run
 ---
 
-    $ _build/default/bin/clunk
+    $ _build/default/bin/clunk script.nk
