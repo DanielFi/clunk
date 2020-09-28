@@ -12,7 +12,7 @@ Left 700 '*' '/' '%'.
 Unary 800 uminus.
 Left 900 '^'.
 
-expressions -> expression ';' expression : {expressions, ['$1', '$3']}. 
+expressions -> expression ';' : {expressions, ['$1']}. 
 expressions -> expression ';' expressions : {expressions, Es} = '$3', {expressions, ['$1' | Es]}.
 
 expression -> integer : '$1'.
