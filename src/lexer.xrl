@@ -2,8 +2,8 @@ Definitions.
 
 Digit = [0-9]
 Lowercase = [a-z]
-Alpha = [a-zA-Z]
-Atomable = [a-zA-Z_0-9]
+Uppercase = [A-Z]
+Alphanumeric = [a-zA-Z_0-9]
 Whitespace = [\s\t\r\n]
 
 Rules.
@@ -14,10 +14,10 @@ Rules.
 {Digit}+\.{Digit}+ :
     {token, {float, TokenLine, list_to_float(TokenChars)}}.
 
-{Lowercase}{Atomable}* :
+{Lowercase}{Alphanumeric}* :
     {token, {atom, TokenLine, list_to_atom(TokenChars)}}.
 
-({Alpha)|_}{Atomable}* :
+({Uppercase}|_){Alphanumeric}* :
     {token, {name, TokenLine, list_to_atom(TokenChars)}}.
 
 (\;|\+|-|\*|/|\^|%|=|\(|\)|\[|\]|\{|\}|\||<|>|==|!=|<=|>=|,|=>) :
@@ -26,7 +26,7 @@ Rules.
 {Whitespace} : 
     skip_token.
 
-{Digit}+{Atomable} : 
+{Digit}+{Alphanumeric} : 
     {error, "Unexpected character " ++ lists:last(TokenChars)}.
 
 Erlang code.
