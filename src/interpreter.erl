@@ -19,13 +19,24 @@ interpret({expressions, Expressions}, Scope) ->
 
 interpret({integer, _, Value}, Scope) ->
     {Value, Scope};
+interpret({float, _, Value}, Scope) ->
+    {Value, Scope};
+interpret({atom, _, Value}, Scope) ->
+    {Value, Scope};
+interpret({tuple, Elements}, Scope) ->
+    {ReversedValues, NewScope} = lists:foldl(fun(E, {Vs, S}) -> 
+        {V, NewS} = interpret(E, S),
+        {[V | Vs], NewS}
+    end, {[], Scope}, Elements),
+    {{tuple, lists:reverse(ReversedValues)}, NewScope};
+interpret({list, Elements}, Scope) ->
+    {ReversedValues, NewScope} = lists:foldl(fun(E, {Vs, S}) -> 
+        {V, NewS} = interpret(E, S),
+        {[V | Vs], NewS}
+    end, {[], Scope}, Elements),
+    {{list, lists:reverse(ReversedValues)}, NewScope};
 interpret({name, _, Name}, Scope) ->
-    case get(Name, Scope) of
-        {ok, Value} ->
-            {Value, Scope};
-        {error, not_found} ->
-            {{name, Name}, Scope}
-    end;
+    {{name, Name}, Scope};
 
 interpret({{'+', _}, Left, Right}, Scope) ->
     {LeftValue, Scope1} = interpret(Left, Scope),
@@ -54,13 +65,8 @@ interpret({{'^', _}, Left, Right}, Scope) ->
 
 interpret({{'=', _}, Left, Right}, Scope) ->
     {LeftValue, Scope1} = interpret(Left, Scope),
-    {RightValue, #scope{bound_names = BoundNames} = Scope2} = interpret(Right, Scope1),
-    case LeftValue of
-        {name, Name} -> 
-            {RightValue, Scope2#scope{bound_names = BoundNames#{Name => RightValue}}};
-        _ ->
-            match(LeftValue, RightValue, Scope2)
-    end.
+    {RightValue, Scope2} = interpret(Right, Scope1),
+    match(LeftValue, RightValue, Scope2).
 
 %%====================================================================
 %% Internal functions
@@ -76,5 +82,29 @@ get(Name, #scope{parent_scope = Parent, bound_names = BoundNames}) ->
             get(Name, Parent)
     end.
 
-match(Left, Right, Scope) when Left == Right ->
-    {Left, Scope}.
+match(Left, {name, RName}, Scope) ->
+    case get(RName, Scope) of
+        {ok, RValue} ->
+            match(Left, RValue, Scope);
+        {error, not_found} ->
+            throw(io_lib:format("name '~p' is not bound", [RName]))
+    end;
+match({name, LName}, Right, #scope{bound_names = BoundNames} = Scope) ->
+    case get(LName, Scope) of
+        {ok, LValue} ->
+            match(LValue, Right, Scope);
+        {error, not_found} ->
+            {Right, Scope#scope{bound_names = BoundNames#{LName => Right}}}
+    end;
+match(Left, Right, Scope) when Left == Right andalso not is_tuple(Left)->
+    {Left, Scope};
+match({tuple, LValues}, {tuple, RValues}, Scope) when length(LValues) == length(RValues) ->
+    {ReversedValues, NewScope} = lists:foldl(fun({L, R}, {V, S}) -> 
+        {NewV, NewS} = match(L, R, S), {[NewV | V], NewS} 
+    end, {[], Scope}, lists:zip(LValues, RValues)),
+    {{tuple, lists:reverse(ReversedValues)}, NewScope};
+match({list, LValues}, {list, RValues}, Scope) when length(LValues) == length(RValues) ->
+    {ReversedValues, NewScope} = lists:foldl(fun({L, R}, {V, S}) -> 
+        {NewV, NewS} = match(L, R, S), {[NewV | V], NewS} 
+    end, {[], Scope}, lists:zip(LValues, RValues)),
+    {{list, lists:reverse(ReversedValues)}, NewScope}.

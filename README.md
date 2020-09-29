@@ -14,7 +14,7 @@ Road map
   - [X] bound names
   - [ ] functions, scopes and closures
   - [X] pattern matching
-  - [ ] complex data types (tuples and lists)
+  - [X] complex data types (tuples and lists)
 
 Build
 -----
