@@ -53,4 +53,4 @@ expression -> expression '(' content_expressions ')' : {call, '$1', '$3'}.
 uminus -> '-' expression : {'$1', '$2'}.
 
 content_expressions -> expression : ['$1'].
-content_expressions -> expression ',' content_expressions : ['$1' | '$2'].
+content_expressions -> expression ',' content_expressions : ['$1' | '$3'].
