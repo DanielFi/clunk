@@ -36,7 +36,18 @@ interpret({list, Elements}, Scope) ->
     end, {[], Scope}, Elements),
     {{list, lists:reverse(ReversedValues)}, NewScope};
 interpret({name, _, Name}, Scope) ->
-    {{name, Name}, Scope};
+    case get(Name, Scope) of
+        {ok, Value} ->
+            {Value, Scope};
+        {error, not_found} ->
+            {{name, Name}, Scope}
+    end;
+interpret({function, Arguments, Body}, Scope) ->
+    {ReversedArgumentValues, NewScope} = lists:foldl(fun(A, {Vs, S}) ->
+        {V, NewS} = interpret(A, S),
+        {[V | Vs], NewS}
+    end, {[], Scope}, Arguments),
+    {{function, lists:reverse(ReversedArgumentValues), Body, NewScope}, NewScope};
 
 interpret({{'+', _}, Left, Right}, Scope) ->
     {LeftValue, Scope1} = interpret(Left, Scope),
@@ -66,7 +77,21 @@ interpret({{'^', _}, Left, Right}, Scope) ->
 interpret({{'=', _}, Left, Right}, Scope) ->
     {LeftValue, Scope1} = interpret(Left, Scope),
     {RightValue, Scope2} = interpret(Right, Scope1),
-    match(LeftValue, RightValue, Scope2).
+    match(LeftValue, RightValue, Scope2);
+
+interpret({call, Function, Parameters}, Scope) ->
+    {ReversedParameterValues, Scope1} = lists:foldl(fun(P, {PVs, S}) ->
+        {PV, NewS} = interpret(P, S),
+        {[PV | PVs], NewS}
+    end, {[], Scope}, Parameters),
+    ParameterValues = lists:reverse(ReversedParameterValues),
+    {{function, Arguments, Body, Closure}, Scope2} = interpret(Function, Scope1),
+    InnerScope = lists:foldl(fun({A, P}, S) ->
+        {_, NewS} = match(A, P, S),
+        NewS
+    end, #scope{parent_scope = Closure}, lists:zip(Arguments, ParameterValues)),
+    {Result, _} = interpret(Body, InnerScope),
+    {Result, Scope2}.
 
 %%====================================================================
 %% Internal functions

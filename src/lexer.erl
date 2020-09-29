@@ -376,6 +376,8 @@ yystate(4, [40|Ics], Line, Tlen, Action, Alen) ->
     yystate(0, Ics, Line, Tlen+1, Action, Alen);
 yystate(4, [37|Ics], Line, Tlen, Action, Alen) ->
     yystate(0, Ics, Line, Tlen+1, Action, Alen);
+yystate(4, [36|Ics], Line, Tlen, Action, Alen) ->
+    yystate(0, Ics, Line, Tlen+1, Action, Alen);
 yystate(4, [33|Ics], Line, Tlen, Action, Alen) ->
     yystate(7, Ics, Line, Tlen+1, Action, Alen);
 yystate(4, [32|Ics], Line, Tlen, Action, Alen) ->
