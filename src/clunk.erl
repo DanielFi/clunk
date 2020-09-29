@@ -11,11 +11,10 @@ main(Args) ->
     [Filename] = Args,
     {ok, BinaryContents} = file:read_file(Filename),
     {ok, Tokens, _} = lexer:string(binary_to_list(BinaryContents)),
+    io:format("~p~n", [Tokens]),
     {ok, AST} = parser:parse(Tokens),
-    
-    io:format("~p", [AST]),
-    io:format("~n", []),
-    io:format("~p", [interpreter:interpret(AST)]),
+    io:format("~p~n", [AST]),
+    io:format("~p~n", [interpreter:interpret(AST)]),
 
     erlang:halt(0).
 
