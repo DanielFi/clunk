@@ -132,4 +132,6 @@ match({list, LValues}, {list, RValues}, Scope) when length(LValues) == length(RV
     {ReversedValues, NewScope} = lists:foldl(fun({L, R}, {V, S}) -> 
         {NewV, NewS} = match(L, R, S), {[NewV | V], NewS} 
     end, {[], Scope}, lists:zip(LValues, RValues)),
-    {{list, lists:reverse(ReversedValues)}, NewScope}.
+    {{list, lists:reverse(ReversedValues)}, NewScope};
+match(Left, Right, _) -> 
+    throw(lists:flatten(io_lib:format("'~p' and '~p' do not match", [Left, Right]))).
