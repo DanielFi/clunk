@@ -13,9 +13,9 @@ It's basically drunk erlang (without the OTP fun) with JS inspired syntax.
 ### Example:
 
 ```
-DoStuff = (X) => {
-	X + 2;
-};
+DoStuff = (X) -> X + 2;
 
 print(DoStuff(1));
 ```
+
+See the [tests folder](tests/) for more examples. 

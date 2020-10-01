@@ -20,10 +20,7 @@ Rules.
 ({Uppercase}|_){Alphanumeric}* :
     {token, {name, TokenLine, list_to_atom(TokenChars)}}.
 
-\){Whitespace}*=> :
-    {token, {')=>', TokenLine}}.
-
-(\$|\;|\+|-|\*|/|\^|%|=|\(|\)|\[|\]|\{|\}|\||<|>|==|!=|<=|>=|,|=>) :
+(\$|\;|\+|-|\*|/|\^|%|=|\(|\)|\[|\]|\{|\}|\||<|>|==|!=|<=|>=|,|\->|<\-) :
     {token, {list_to_atom(TokenChars), TokenLine}}.
 
 {Whitespace} : 

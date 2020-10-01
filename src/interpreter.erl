@@ -42,12 +42,6 @@ interpret({name, _, Name}, Scope) ->
         {error, not_found} ->
             {{name, Name}, Scope}
     end;
-interpret({function, Arguments, Body}, Scope) ->
-    {ReversedArgumentValues, NewScope} = lists:foldl(fun(A, {Vs, S}) ->
-        {V, NewS} = interpret(A, S),
-        {[V | Vs], NewS}
-    end, {[], Scope}, Arguments),
-    {{function, lists:reverse(ReversedArgumentValues), Body, NewScope}, NewScope};
 
 interpret({{'+', _}, Left, Right}, Scope) ->
     {LeftValue, Scope1} = interpret(Left, Scope),
@@ -78,15 +72,24 @@ interpret({{'=', _}, Left, Right}, Scope) ->
     {LeftValue, Scope1} = interpret(Left, Scope),
     {RightValue, Scope2} = interpret(Right, Scope1),
     match(LeftValue, RightValue, Scope2);
+interpret({{'<-', _}, Left, Right}, Scope) ->
+    {LeftValue, Scope1} = interpret(Left, Scope),
+    case interpret(Right, Scope1) of
+        {{tuple, RightValues}, Scope2} ->
+            LastRightValue = lists:last(RightValues),
+            match(LeftValue, LastRightValue, Scope2);
+        {{function, _, _, _} = Function, Scope2} ->
+            match(LeftValue, last_wrap_tuple_callable(Function), Scope2)
+    end;
 
-interpret({call, Function, Parameters}, Scope) ->
-    {ReversedParameterValues, Scope1} = lists:foldl(fun(P, {PVs, S}) ->
-        {PV, NewS} = interpret(P, S),
-        {[PV | PVs], NewS}
-    end, {[], Scope}, Parameters),
-    ParameterValues = lists:reverse(ReversedParameterValues),
+interpret({{'->', _}, Argument, Body}, Scope) ->
+    {ArgumentValue, Scope1} = interpret(Argument, Scope),
+    {{function, ArgumentValue, Body, Scope1}, Scope1};
+
+interpret({call, Function, Parameter}, Scope) ->
+    {ParameterValue, Scope1} = interpret(Parameter, Scope),
     {Callable, Scope2} = interpret(Function, Scope1),
-    {Result, _} = call(Callable, ParameterValues),
+    {Result, _} = call(Callable, ParameterValue),
     {Result, Scope2}.
 
 %%====================================================================
@@ -132,16 +135,16 @@ match({list, LValues}, {list, RValues}, Scope) when length(LValues) == length(RV
 match(Left, Right, _) -> 
     throw(lists:flatten(io_lib:format("'~p' and '~p' do not match", [Left, Right]))).
 
-call({function, Arguments, Body, Closure}, ParameterValues) ->
-    {_, CallScope} = match({tuple, Arguments}, {tuple, ParameterValues}, Closure),
+call({function, Argument, Body, Closure}, Parameter) ->
+    {_, CallScope} = match(Argument, Parameter, Closure),
     interpret(Body, CallScope);
-call({tuple, Callables}, ParameterValues) ->
+call({tuple, Callables}, Parameter) ->
     {Success, FinalResult} = lists:foldl(fun(Callable, {Matched, Result}) ->
         case Matched of
             true ->
                 {true, Result};
             false ->
-                try {true, call(Callable, ParameterValues)}
+                try {true, call(Callable, Parameter)}
                 catch
                     _ -> {false, nil}
             end
@@ -155,3 +158,6 @@ call({tuple, Callables}, ParameterValues) ->
     end;
 call(NonCallable, _) ->
     throw(lists:flatten(io_lib:format("'~p' not callable", [NonCallable]))).
+
+last_wrap_tuple_callable({function, Argument, Body, Closure}) ->
+    {function, Argument, {{'<-', nil}, {name, nil, '_'}, Body}, Closure}.
