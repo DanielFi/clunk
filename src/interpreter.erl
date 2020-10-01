@@ -85,12 +85,8 @@ interpret({call, Function, Parameters}, Scope) ->
         {[PV | PVs], NewS}
     end, {[], Scope}, Parameters),
     ParameterValues = lists:reverse(ReversedParameterValues),
-    {{function, Arguments, Body, Closure}, Scope2} = interpret(Function, Scope1),
-    InnerScope = lists:foldl(fun({A, P}, S) ->
-        {_, NewS} = match(A, P, S),
-        NewS
-    end, #scope{parent_scope = Closure}, lists:zip(Arguments, ParameterValues)),
-    {Result, _} = interpret(Body, InnerScope),
+    {Callable, Scope2} = interpret(Function, Scope1),
+    {Result, _} = call(Callable, ParameterValues),
     {Result, Scope2}.
 
 %%====================================================================
@@ -135,3 +131,27 @@ match({list, LValues}, {list, RValues}, Scope) when length(LValues) == length(RV
     {{list, lists:reverse(ReversedValues)}, NewScope};
 match(Left, Right, _) -> 
     throw(lists:flatten(io_lib:format("'~p' and '~p' do not match", [Left, Right]))).
+
+call({function, Arguments, Body, Closure}, ParameterValues) ->
+    {_, CallScope} = match({tuple, Arguments}, {tuple, ParameterValues}, Closure),
+    interpret(Body, CallScope);
+call({tuple, Callables}, ParameterValues) ->
+    {Success, FinalResult} = lists:foldl(fun(Callable, {Matched, Result}) ->
+        case Matched of
+            true ->
+                {true, Result};
+            false ->
+                try {true, call(Callable, ParameterValues)}
+                catch
+                    _ -> {false, nil}
+            end
+        end
+    end, {false, nil}, Callables),
+    case Success of
+        true ->
+            FinalResult;
+        false ->
+            throw("no matching function clause")
+    end;
+call(NonCallable, _) ->
+    throw(lists:flatten(io_lib:format("'~p' not callable", [NonCallable]))).
