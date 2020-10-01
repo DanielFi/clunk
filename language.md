@@ -13,7 +13,7 @@ It's basically drunk erlang (without the OTP fun) with JS inspired syntax.
 ### Example:
 
 ```
-DoStuff = $(X) => {
+DoStuff = (X) => {
 	X + 2;
 };
 

@@ -1,11 +1,11 @@
 Nonterminals expressions expression uminus content_expressions.
-Terminals integer float atom name ';' '+' '-' '*' '/' '^' '%' '=' '(' ')' '[' ']' '{' '}' '|' '<' '>' '==' '<=' '>=' '!=' ',' '=>' '$'.
+Terminals integer float atom name ';' '+' '-' '*' '/' '^' '%' '=' '(' ')' '[' ']' '{' '}' '|' '<' '>' '==' '<=' '>=' '!=' ',' ')=>'.
 Rootsymbol expressions.
 
 Right 100 ','.
 Right 200 '='.
 Right 300 '|'.
-Nonassoc 400 '=>'.
+Nonassoc 400 ')=>'.
 Nonassoc 500 '==' '!=' '<' '>' '<=' '>='.
 Left 600 '+' '-'.
 Left 700 '*' '/' '%'.
@@ -26,7 +26,7 @@ expression -> '{' content_expressions '}' : {tuple, '$2'}.
 expression -> '[' ']' : {list, []}.
 expression -> '[' content_expressions ']' : {list, '$2'}.
 
-expression -> '$' '(' content_expressions ')' '=>' '{' expressions '}' : {function, '$3', '$7'}.
+expression ->  '(' content_expressions ')=>' '{' expressions '}' : {function, '$2', '$5'}.
 
 expression -> '(' expression ')' : '$2'.
 
