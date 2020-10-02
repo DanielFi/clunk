@@ -1,10 +1,10 @@
-Map = {} -> {};
-Set = {Key, Value, M} -> {Key -> Value, M};
-Get = {Key, M} -> M(Key);
+Map = {} => {};
+Set = {Key, Value, M} => {Key => Value, M};
+Get = {Key, M} => M(Key);
 
 M = Map{};
 M1 = Set{name, john, M};
 M2 = Set{cat, whiskers, M1};
 Name = Get{name, M2};
 M3 = Set{name, walter, M2};
-Name1 = Get{name, M3};
+Name1 = Get{name, M3}.

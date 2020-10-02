@@ -72,24 +72,15 @@ interpret({{'=', _}, Left, Right}, Scope) ->
     {LeftValue, Scope1} = interpret(Left, Scope),
     {RightValue, Scope2} = interpret(Right, Scope1),
     match(LeftValue, RightValue, Scope2);
-interpret({{'<-', _}, Left, Right}, Scope) ->
-    {LeftValue, Scope1} = interpret(Left, Scope),
-    case interpret(Right, Scope1) of
-        {{tuple, RightValues}, Scope2} ->
-            LastRightValue = lists:last(RightValues),
-            match(LeftValue, LastRightValue, Scope2);
-        {{function, _, _, _} = Function, Scope2} ->
-            match(LeftValue, last_wrap_tuple_callable(Function), Scope2)
-    end;
 
-interpret({{'->', _}, Argument, Body}, Scope) ->
-    {ArgumentValue, Scope1} = interpret(Argument, Scope),
-    {{function, ArgumentValue, Body, Scope1}, Scope1};
+interpret({{'=>', _}, Argument, Body}, Scope) ->
+    {ArgumentValue, NewScope} = interpret(Argument, Scope),
+    {{function, ArgumentValue, Body, NewScope}, NewScope};
 
-interpret({call, Function, Parameter}, Scope) ->
+interpret({call, Callable, Parameter}, Scope) ->
     {ParameterValue, Scope1} = interpret(Parameter, Scope),
-    {Callable, Scope2} = interpret(Function, Scope1),
-    {Result, _} = call(Callable, ParameterValue),
+    {CallableValue, Scope2} = interpret(Callable, Scope1),
+    {Result, _} = call(CallableValue, ParameterValue),
     {Result, Scope2}.
 
 %%====================================================================
@@ -158,6 +149,3 @@ call({tuple, Callables}, Parameter) ->
     end;
 call(NonCallable, _) ->
     throw(lists:flatten(io_lib:format("'~p' not callable", [NonCallable]))).
-
-last_wrap_tuple_callable({function, Argument, Body, Closure}) ->
-    {function, Argument, {{'<-', nil}, {name, nil, '_'}, Body}, Closure}.
