@@ -1,4 +1,4 @@
-Sum3 = A => B => C => A + B + C;
+Sum3 = X => Y => Z => X + Y + Z;
 
 A = Sum3(1)(2)(3);
 B = Sum3(1,2,3);
