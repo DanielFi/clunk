@@ -2,9 +2,9 @@ Map = {} => {};
 Set = {Key, Value, M} => {Key => Value, M};
 Get = {Key, M} => M(Key);
 
-MyMap = Map{};
-MyMap1 = Set{name, john, MyMap};
-MyMap2 = Set{cat, whiskers, MyMap1};
-Name = Get{name, MyMap2};
-MyMap3 = Set{name, walter, MyMap2};
-Name1 = Get{name, MyMap3}.
+M = Map{};
+M1 = Set{name, john, M};
+M2 = Set{cat, whiskers, M1};
+Name = Get{name, M2};
+M3 = Set{name, walter, M2};
+Name1 = Get{name, M3}.

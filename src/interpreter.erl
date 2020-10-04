@@ -102,6 +102,9 @@ enter_scope(ParentScope, #state{scopes = Scopes, scope_count = Count}) ->
     NewScope = #scope{parent_scope = ParentScope},
     #state{scope = Count, scopes = Scopes#{Count => NewScope}, scope_count = Count + 1}.
 
+set_parent_scope(ParentScope, #state{scopes = Scopes, scope = Scope} = State) ->
+    State#state{scopes = Scopes#{Scope => (get_scope(Scope, State))#scope{parent_scope = ParentScope}}}.
+
 get(Name, #state{} = State) ->
     get(Name, current_scope(State), State).
 
@@ -149,9 +152,10 @@ match(Left, Right, _) ->
     throw(lists:flatten(io_lib:format("'~p' and '~p' do not match", [Left, Right]))).
 
 call({function, Argument, Body, Closure}, Parameter, State) ->
-    CallState = enter_scope(Closure, State),
+    CallState = enter_scope(nil, State),
     {_, CallState1} = match(Argument, Parameter, CallState),
-    interpret(Body, CallState1);
+    CallState2  = set_parent_scope(Closure, CallState1),
+    interpret(Body, CallState2);
 call({tuple, Callables}, Parameter, State) ->
     {Success, FinalResult} = lists:foldl(fun(Callable, {Matched, Result}) ->
         case Matched of
